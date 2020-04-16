@@ -14,7 +14,7 @@ public class MultiClient extends ConnectDB{
 	   Scanner scanner = new Scanner(System.in);
 	   String s_name;
 	   do {    
-			   System.out.println("이름을 입력하세요.");
+			   System.out.println("이름을 써주세요 : ");
 			   s_name = scanner.nextLine();
 //			   //이름 DB에 넣기
 //			   String query = "INSERT into member_tb values ( ?, ''))"; 

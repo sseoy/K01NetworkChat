@@ -20,6 +20,7 @@ public class MultiServer extends ConnectDB{
    static //클라이언트 정보 저장을 위한 Map컬렉션정의
     Map<String, PrintWriter> clientMap;
    
+   //String blackList="";
    //생성자 
    public MultiServer() {
 	  
@@ -34,31 +35,41 @@ public class MultiServer extends ConnectDB{
    public void init() {
 	   Scanner scan = new Scanner(System.in);
 	   boolean check = false;
+	   
+	   final int NO=1;
+	   final int BLACK=2;
+	   final int Prohibition=3;
+	   
       
       try {
-         serverSocket = new ServerSocket(9999);
-         System.out.println("서버가 시작되었습니다.");
-         System.out.println("블랙리스트작성하시겠습니까? 네:1, 아니오:2");
+        System.out.println("설정하시겠습니까? 1.아니오, 2.블랙리스트설정 3.대화금칙어설정");
          
         int choice = scan.nextInt();
          scan.nextLine();
-         System.out.println("블랙리스트 할 대상을 적어주세요:");
+        
          
          while(check==false) {
-        	 String b_name = scan.nextLine();
-        	 
-        	 if(choice == 1) {
+        	
+        	 //블랙리스트 설정
+        	 if(choice == BLACK) {
+        		 System.out.println("블랙리스트 할 대상을 적어주세요:");
+        		 String b_name = scan.nextLine();
         		 check=blacklistCheck(b_name, check);
-            	 
+        		 //blackList=b_name;
+        		 
             	 if(check==false) {
             		 System.out.println("입력한 이름이 없습니다. 다시 입력해주세요!");
                  }else {
                 	 break;
-                	 
                  }
+             }else if(choice==Prohibition){
+            	 break;
+             }else if(choice==NO){
+            	 break;
              }
          }
-         
+         serverSocket = new ServerSocket(9999);
+         System.out.println("서버가 시작되었습니다.");
          /*
 	         클라이언트의 메세지를 모든 클라이언트에게 전달하기 위한 
 	         쓰레드 생성 및 start.
@@ -122,7 +133,7 @@ public class MultiServer extends ConnectDB{
    }
    
    //귓속말 보내기(일회성)
-   public void sendMsg(String msg, String w_name) {
+   public void sendMsg(String msg, String w_name, String w2_name) {
 	   int start = msg.indexOf(" ")+1;
 	   int end = msg.indexOf(" ", start);
 	   
@@ -133,7 +144,7 @@ public class MultiServer extends ConnectDB{
 		   
 		   if(obj != null) {
 			   PrintWriter name = (PrintWriter)obj;
-			   name.println(w_name +"님이 귓속말을 보내셨습니다.:"+ msg2);
+			   name.println(w2_name +"님이 귓속말을 보내셨습니다.:"+ msg2);
 		   }
 	   }
    }
@@ -147,25 +158,48 @@ public class MultiServer extends ConnectDB{
 	   }
    }
    
-   //중복 이름 처리
+   //중복 이름 처리(등록)
    public boolean doubleCheck(String name, boolean check) {
-	 
 	   try {
-		   String query = "INSERT into member_td values ( ?, '')"; 
+		   String query = "INSERT into member_td values ( ?, '일반')"; 
 		   
 		   psmt = con.prepareStatement(query);
-	   	
 		   psmt.setString(1, name);
 	       psmt.executeUpdate();//입력한 행갯수 반환
 	       
-	       check = false; 
-	       return check;
-		   
+	       if(psmt.executeUpdate()==0) {
+			   check = true;
+	       }
+//		   }else {
+//			   check = true;
+//		   }
+	       
 		   
 	   }catch (Exception e) {
 		//e.printStackTrace();
-		check = true;
-		
+		   check = false;
+	}
+	return check;
+   }
+   
+   //로그인(이름 유무 확인), 중복
+   public boolean nameLogin(String name, boolean check) {
+	   try {
+		   String sql = "SELECT * FROM member_td "
+				+ "WHERE name LIKE '%'||?||'%'";
+		   psmt = con.prepareStatement(sql);
+		   psmt.setString(1, name);
+		   rs= psmt.executeQuery();
+		   
+		   if(psmt.executeUpdate()==0) {
+			   check = true;
+		   }else {
+			   check = false;
+		   }
+		   
+	   }
+	   catch (Exception e) {
+		   //check = false;
 	}
 	return check;
    }
@@ -178,11 +212,19 @@ public class MultiServer extends ConnectDB{
 		   psmt = con.prepareStatement(sql);
 		   psmt.setString(1, name);
 		   rs= psmt.executeQuery();
+		   
 		   check = true;
 		   
+		   String sql_02 =
+				   "UPDATE member_td set state='블랙' where name LIKE '%'||?||'%'";
+		   psmt = con.prepareStatement(sql_02);
+		   psmt.setString(1, name);
+		   rs= psmt.executeQuery();
+		   
 		   if(psmt.executeUpdate()==0) {
-			   System.out.println("테스트");
 			   check = false;
+		   }else {
+			   System.out.println("※"+name+"님이 블랙되었습니다.※");
 		   }
 		   
 	   }catch (Exception e) {
@@ -191,6 +233,31 @@ public class MultiServer extends ConnectDB{
 	return check;
 	   
    }
+   
+   //블랙리스트 체크
+   public boolean blackCheck(String name, boolean check){
+	   try {
+		   String sql = "SELECT * FROM member_td "
+					+ "WHERE name LIKE '%'||?||'%' and state='블랙'";
+		   psmt = con.prepareStatement(sql);
+		   psmt.setString(1, name);
+		   rs= psmt.executeQuery();
+		   
+		   
+		   if(psmt.executeUpdate()==0) {
+			   check = false;
+		   }else {
+			   check = true;
+		   }
+		   
+	   }catch (Exception e) {
+		   
+	}
+	return check;
+	   
+   }
+   
+
 
 
 //내부클래스
@@ -221,32 +288,57 @@ class MultiServerT extends Thread {
    
    @Override
    public void run() {
-	   
+	   Scanner scanner = new Scanner(System.in);
       //클라이언트로부터 전송된 "대화명"을 저장할 변수
       String name = "";
       //귓속말 저장할 변수
       String whisper = "";
       //메세지 저장용 변수
       String s = "";
-      boolean whisperSelection = false;
+      
       
       boolean check  = true;
-      
+      boolean check_lo  = true;
+      boolean black_check = true;
       try {
     	  while(check==true) {
-    		//클라이언트의 이름을 읽어와서 저장
-              name = in.readLine();
-              
-              //boolean whisper = false;
-              name = URLDecoder.decode(name, "UTF-8");
-              //접속한 클라이언트에게 새로운 사용자의 입장을 알림.
-              //접속자를 제외한 나머지 클라이언트만 입장메세지를 받는다.
-              
-              check = doubleCheck(name, check);
-              if(check==false) {
-            	  out.println("테스트");
-              }else {
-            	  out.println("중복됩니다. 다시 이름 입력해주세요!");
+    		//클라이언트의 등록 여부, 이름을 읽어와서 저장
+    		
+    		//out.println("테스트");
+    		name = in.readLine();
+    		name = URLDecoder.decode(name, "UTF-8");
+    		
+    		if(black_check==true) {
+    			out.println("블랙리스트 이름입니다. 접속할수 없습니다.");
+    			return;
+    			
+    		}
+    		while(check_lo==true) {
+    			
+    			check_lo = nameLogin(name, check_lo);//처음에 DB에 이름이 있는지 확인
+    			
+    			
+    			
+    			if(check_lo==false) {
+    				out.println("로그인합니다.");
+    				check = false;//등록할필요 없으니깐 false를 그냥 지정해줌
+    				
+        		}else if(check_lo==true){
+        			out.println("등록된 이름이없습니다. 등록을 하세요");
+        			out.println("등록할 이름: ");
+        			name=in.readLine();
+        			check = doubleCheck(name, check);//아이디 중복체크(없으면 false, 있으면 true반환)
+        			//out.println(check);
+        			if(check==true) {
+        				out.println("중복됩니다. 다시 이름 입력해주세요!");
+                    }else if(check==false){
+                    	out.println("※등록되었습니다.※");
+                    	//break;
+                    }
+        		}
+    		}
+              if(check==false && check_lo==false) {
+            	  out.println("채팅 시작!");
               }
     	  }
             
@@ -257,7 +349,7 @@ class MultiServerT extends Thread {
             
             //HashMap에 저장된 객체의 수로 접속자수를 파악할수 있다.
             System.out.println(name+"접속");
-            System.out.println("현재 접속사 수는 "+clientMap.size()+"명 입니다.");
+            System.out.println("현재 접속자 수는 "+clientMap.size()+"명 입니다.");
             
             //입력한 메세지는 모든 클라이언트에게 Echo된다.
             //      /list
@@ -287,15 +379,16 @@ class MultiServerT extends Thread {
 	            		//일회성
 	            		if(whisperArr.length>2) {
 	            			//out.println("확인");
-	            			sendMsg(s, name);
+	            			sendMsg(s, w_name , name);
 	            			
 	            			
 	            		}else if(whisperArr.length==2){
+	            			out.println("고정귓속말이 설정되었습니다.");
 	            			while(true) {
 	            				
 	            				whisper=in.readLine();
-	            				out.println("고정귓속말이 설정되었습니다.");
-	            				if(whisper.equals("end")) {
+	            				
+	            				if(whisper.equals("/end")) {
 	            					out.println("고정귓속말이 해제되었습니다.");
 	            					break;
 	            				}
@@ -309,18 +402,18 @@ class MultiServerT extends Thread {
             		System.out.println(name+" >> "+s);
                     //DB처리는 여기서 클라이언트에게 Echo해준다.
                     String query = "INSERT into chating_tb values (seq_chating.nextval, ?, ?, to_char(sysdate,'mm/dd hh:mi:ss'))";
-                    			
-                    	
                     psmt = con.prepareStatement(query);
-                    	
                     psmt.setString(1, name);
                     psmt.setString(2, s);
-                    	
-                    	
+                        	
+                        	
                     sendAllMsg(name, s);
-                    int affected = psmt.executeUpdate();
+                    psmt.executeUpdate();
             		
             	}
+            	
+            		
+            	
             	
             }
       }catch(NullPointerException e) {
@@ -352,6 +445,6 @@ class MultiServerT extends Thread {
             e.printStackTrace();
          }
       }
-   }
+   }//end of run
   }   
 }
