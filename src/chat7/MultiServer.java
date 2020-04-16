@@ -39,7 +39,6 @@ public class MultiServer extends ConnectDB{
 	   final int BLACK=2;
 	   final int Prohibition=3;
 	   
-      
       try {
         System.out.println("설정하시겠습니까? 1.아니오, 2.블랙리스트설정 3.대화금칙어설정");
          
@@ -286,7 +285,6 @@ class MultiServerT extends Thread {
       //메세지 저장용 변수
       String s = "";
       
-      
       boolean check  = true;
       boolean check_lo  = true;
       boolean black_check = true;
@@ -347,8 +345,7 @@ class MultiServerT extends Thread {
             System.out.println("현재 접속자 수는 "+clientMap.size()+"명 입니다.");
             
             //입력한 메세지는 모든 클라이언트에게 Echo된다.
-            //      /list
-            
+            ///list, /to
             while (in!=null) {
             	
             	s= in.readLine();
