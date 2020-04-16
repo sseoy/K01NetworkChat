@@ -20,7 +20,6 @@ public class MultiServer extends ConnectDB{
    static //클라이언트 정보 저장을 위한 Map컬렉션정의
     Map<String, PrintWriter> clientMap;
    
-   //String blackList="";
    //생성자 
    public MultiServer() {
 	  
@@ -170,9 +169,6 @@ public class MultiServer extends ConnectDB{
 	       if(psmt.executeUpdate()==0) {
 			   check = true;
 	       }
-//		   }else {
-//			   check = true;
-//		   }
 	       
 		   
 	   }catch (Exception e) {
@@ -242,16 +238,14 @@ public class MultiServer extends ConnectDB{
 		   psmt = con.prepareStatement(sql);
 		   psmt.setString(1, name);
 		   rs= psmt.executeQuery();
-		   
-		   
 		   if(psmt.executeUpdate()==0) {
 			   check = false;
 		   }else {
-			   check = true;
+			   
 		   }
 		   
 	   }catch (Exception e) {
-		   
+		   check = true;
 	}
 	return check;
 	   
@@ -282,10 +276,6 @@ class MultiServerT extends Thread {
       }
    }
    
-   
-	
-  
-   
    @Override
    public void run() {
 	   Scanner scanner = new Scanner(System.in);
@@ -300,6 +290,7 @@ class MultiServerT extends Thread {
       boolean check  = true;
       boolean check_lo  = true;
       boolean black_check = true;
+      
       try {
     	  while(check==true) {
     		//클라이언트의 등록 여부, 이름을 읽어와서 저장
@@ -308,9 +299,13 @@ class MultiServerT extends Thread {
     		name = in.readLine();
     		name = URLDecoder.decode(name, "UTF-8");
     		
+    		black_check=blackCheck(name, black_check);
+    		
     		if(black_check==true) {
     			out.println("블랙리스트 이름입니다. 접속할수 없습니다.");
     			return;
+    			
+    		}else {
     			
     		}
     		while(check_lo==true) {
@@ -412,9 +407,6 @@ class MultiServerT extends Thread {
             		
             	}
             	
-            		
-            	
-            	
             }
       }catch(NullPointerException e) {
     	
@@ -431,8 +423,7 @@ class MultiServerT extends Thread {
     	 clientMap.remove(name);
     	 sendAllMsg("", name+"님이 퇴장하셨습니다..");
     	 //퇴장하는 클라이언트의 쓰레드명을 보여준다.
-    	 System.out.println(name+" ["+
-    			 Thread.currentThread().getName()+"] 퇴장");
+    	 System.out.println(name+" 퇴장");
     	 System.out.println("현재 접속사 수는"+clientMap.size()+"명 입니다.");
          
          try {

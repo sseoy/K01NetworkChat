@@ -16,24 +16,12 @@ public class MultiClient extends ConnectDB{
 	   do {    
 			   System.out.println("이름을 써주세요 : ");
 			   s_name = scanner.nextLine();
-//			   //이름 DB에 넣기
-//			   String query = "INSERT into member_tb values ( ?, ''))"; 
-//			   
-//			   psmt = con.prepareStatement(query);
-//	       	
-//			   psmt.setString(1, s_name);
-//	           int affected = psmt.executeUpdate();
 
 	           
 		   }while(s_name.isEmpty());
 	
 	  
     
-      
-      //Sender가 기능을 가져가므로 여기서는 필요없음
-//      PrintWriter out = null;
-      //Receiver가 기능을 가져가므로 여기서는 필요없음
-//      BufferedReader in = null;
       
       try {
          String ServerIP = "localhost";
