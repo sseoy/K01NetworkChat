@@ -40,7 +40,7 @@ public class MultiServer extends ConnectDB{
 	   final int Prohibition=3;
 	   
       try {
-        System.out.println("설정하시겠습니까? 1.아니오, 2.블랙리스트설정 3.대화금칙어설정");
+        System.out.println("설정하시겠습니까? 1.아니오, 2.블랙리스트설정");
          
         int choice = scan.nextInt();
          scan.nextLine();
@@ -130,22 +130,26 @@ public class MultiServer extends ConnectDB{
        }
    }
    
+   
    //귓속말 보내기(일회성)
    public void sendMsg(String msg, String w_name, String w2_name) {
-	   int start = msg.indexOf(" ")+1;
+	   //이름의길이가 정해져있지 않기 때문에
+	   int start = msg.indexOf(" ")+1;//  /to 홍길동  안녕하세요
 	   int end = msg.indexOf(" ", start);
 	   
 	   if(end != -1) {
-		   String to = msg.substring(start, end);
-		   String msg2 = msg.substring(end+1);
-		   Object obj = clientMap.get(to);
+		   String to = msg.substring(start, end);// 받는사람의 이름
+		   String msg2 = msg.substring(end+1);//메세지
+		   Object obj = clientMap.get(to);// get은 저장된 값을 꺼내 올때 쓰는 메소드
 		   
 		   if(obj != null) {
-			   PrintWriter name = (PrintWriter)obj;
+			   PrintWriter name = (PrintWriter)obj;//출력
 			   name.println(w2_name +"님이 귓속말을 보내셨습니다.:"+ msg2);
 		   }
 	   }
    }
+
+
    
    //귓속말 보내기(고정)
    public void sendMsgWhisper(String msg, String w_name, String w2_name) {
@@ -166,13 +170,15 @@ public class MultiServer extends ConnectDB{
 	       psmt.executeUpdate();//입력한 행갯수 반환
 	       
 	       if(psmt.executeUpdate()==0) {
-			   check = true;
+			   //check = false;
+	       }else {
+	    	   //check=true;5
 	       }
 	       
 		   
 	   }catch (Exception e) {
 		//e.printStackTrace();
-		   check = false;
+		   //check = false;
 	}
 	return check;
    }
@@ -198,6 +204,9 @@ public class MultiServer extends ConnectDB{
 	}
 	return check;
    }
+   
+ 
+   
    
    //블랙리스트 이름 확인
    public boolean blacklistCheck(String name, boolean check) {
@@ -240,11 +249,11 @@ public class MultiServer extends ConnectDB{
 		   if(psmt.executeUpdate()==0) {
 			   check = false;
 		   }else {
-			   
+			   check = true;
 		   }
 		   
 	   }catch (Exception e) {
-		   check = true;
+		   
 	}
 	return check;
 	   
@@ -287,7 +296,7 @@ class MultiServerT extends Thread {
       
       boolean check  = true;
       boolean check_lo  = true;
-      boolean black_check = true;
+      boolean black_check = false;
       
       try {
     	  while(check==true) {
@@ -298,9 +307,10 @@ class MultiServerT extends Thread {
     		name = URLDecoder.decode(name, "UTF-8");
     		
     		black_check=blackCheck(name, black_check);
-    		
+    		//out.println(black_check);
     		if(black_check==true) {
     			out.println("블랙리스트 이름입니다. 접속할수 없습니다.");
+    			out.println("종료합니다.");
     			return;
     			
     		}else {
@@ -309,8 +319,7 @@ class MultiServerT extends Thread {
     		while(check_lo==true) {
     			
     			check_lo = nameLogin(name, check_lo);//처음에 DB에 이름이 있는지 확인
-    			
-    			
+    												////db에 있으면  false,  없으면  true
     			
     			if(check_lo==false) {
     				out.println("로그인합니다.");
@@ -319,15 +328,22 @@ class MultiServerT extends Thread {
         		}else if(check_lo==true){
         			out.println("등록된 이름이없습니다. 등록을 하세요");
         			out.println("등록할 이름: ");
-        			name=in.readLine();
-        			check = doubleCheck(name, check);//아이디 중복체크(없으면 false, 있으면 true반환)
-        			//out.println(check);
-        			if(check==true) {
-        				out.println("중복됩니다. 다시 이름 입력해주세요!");
-                    }else if(check==false){
-                    	out.println("※등록되었습니다.※");
-                    	//break;
-                    }
+        			
+        			
+        			while(true) {
+        				name=in.readLine();
+        				check = nameLogin(name, check_lo);
+        				
+            			if(check==false) {
+            				out.println("중복됩니다. 다시 이름 입력해주세요!");
+            				
+                        }else if(check==true){
+                        	doubleCheck(name, check);//아이디 중복체크(입력)(없으면 false, 있으면 true반환)
+                        	out.println("※등록되었습니다.※");
+                        	break;
+                        }
+        			}
+        			
         		}
     		}
               if(check==false && check_lo==false) {
@@ -351,30 +367,31 @@ class MultiServerT extends Thread {
             	s= in.readLine();
             	s = URLDecoder.decode(s, "UTF-8");
             	Iterator<String> keys = clientMap.keySet().iterator();
-            	if(s.startsWith("/")) {
+            	//1.list
+            	if(s.startsWith("/")) { //특정문자로 시작하는지 확인 (명령어)
             		
-            		if(s.substring(1).equals("list")) {
+            		if(s.substring(1).equals("list")) {//문자는 0부터니깐 1부터 끝까지 =list와 같은지 비교
             			
                 		out.println("※접속List※");
-                		while(keys.hasNext()) {
+                		while(keys.hasNext()) {//해쉬맵의 키값 이용 접속자들 모두 불러옴
                 			
                 			String key = keys.next();
                 			out.println(key+" 님");
                 		}
                 		out.println("접속되어있습니다.");
             		}
-            		//귓속말 일회성, 고정구분하기
+            		//귓속말 일회성, 고정 구분하기
             		else if(s.substring(1,3).equals("to")){
 	            			
-	            		String[] whisperArr = s.split(" ");
-	            		String w_name = whisperArr[1];
+	            		String[] whisperArr = s.split(" ");//split으로 지정한 구분자를 이용함.
+	            		String w_name = whisperArr[1];// /to 홍길동 안녕하세요
 	            		//일회성
 	            		if(whisperArr.length>2) {
 	            			//out.println("확인");
-	            			sendMsg(s, w_name , name);
+	            			sendMsg(s, w_name , name);//메세지, 받는사람, 보내는사람
 	            			
 	            			
-	            		}else if(whisperArr.length==2){
+	            		}else if(whisperArr.length==2){//고정
 	            			out.println("고정귓속말이 설정되었습니다.");
 	            			while(true) {
 	            				
@@ -390,6 +407,7 @@ class MultiServerT extends Thread {
     			}
 				
             }//첫번째 if문 
+
             	else {
             		System.out.println(name+" >> "+s);
                     //DB처리는 여기서 클라이언트에게 Echo해준다.
