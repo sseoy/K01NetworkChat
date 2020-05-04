@@ -45,6 +45,10 @@ public class MultiClient {
 					else {
 						out.println(s2);
 					}
+					if(!(s2.indexOf("광고")==-1)) {
+						System.out.println("금지단어이므로 출력되지 않습니다");
+						break;
+					}
 				}
 				catch (Exception e) {
 					System.out.println("예외:"+ e);
